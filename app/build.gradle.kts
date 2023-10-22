@@ -69,5 +69,4 @@ dependencies {
     debugImplementation(libs.ui.test.manifest)
     implementation(project(":stories"))
     implementation(libs.coil)
-
 }
