@@ -1,6 +1,13 @@
 package com.ptsiogas.composestories
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,9 +55,19 @@ fun StoriesView(userStories: List<UserStory>) {
             modifier = Modifier.fillMaxSize()
         )
     }
-
+    val slideDuration = 200
     NavHost(navController = navController, startDestination = "storyList") {
-        composable("story") {
+        composable(route = "story", enterTransition = {
+            slideIntoContainer(
+                animationSpec = tween(slideDuration, easing = EaseIn),
+                towards = AnimatedContentTransitionScope.SlideDirection.Start
+            )
+        }, exitTransition = {
+            slideOutOfContainer(
+                animationSpec = tween(slideDuration, easing = EaseOut),
+                towards = AnimatedContentTransitionScope.SlideDirection.Start
+            )
+        }) {
             Stories(numberOfPages = currentStory.value.images.size,
                 onEveryStoryChange = { position ->
                     Log.i("DATA", "Story Change $position")
@@ -61,6 +78,7 @@ fun StoriesView(userStories: List<UserStory>) {
                     if (nextIndex < userStories.size) {
                         currentStory.value = userStories[nextIndex]
                         currentStoryIndex.value = nextIndex
+                        navController.navigate("story")
                     } else {
                         navController.navigate("storyList")
                     }
