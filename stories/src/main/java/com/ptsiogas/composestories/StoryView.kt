@@ -46,6 +46,7 @@ fun StoriesView(userStories: List<UserStory>) {
     val navController = rememberNavController()
     val currentStory = remember { mutableStateOf(userStories[0]) }
     val currentStoryIndex = remember { mutableStateOf(0) }
+    val movingToNextStory = remember { mutableStateOf(true) }
 
     val storyContent: @Composable (Int) -> Unit = { index ->
         AsyncImage(
@@ -58,15 +59,29 @@ fun StoriesView(userStories: List<UserStory>) {
     val slideDuration = 200
     NavHost(navController = navController, startDestination = "storyList") {
         composable(route = "story", enterTransition = {
-            slideIntoContainer(
-                animationSpec = tween(slideDuration, easing = EaseIn),
-                towards = AnimatedContentTransitionScope.SlideDirection.Start
-            )
+            if(movingToNextStory.value) {
+                slideIntoContainer(
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start
+                )
+            } else {
+                slideIntoContainer(
+                    animationSpec = tween(slideDuration, easing = LinearEasing),
+                    towards = AnimatedContentTransitionScope.SlideDirection.End
+                )
+            }
         }, exitTransition = {
-            slideOutOfContainer(
-                animationSpec = tween(slideDuration, easing = EaseOut),
-                towards = AnimatedContentTransitionScope.SlideDirection.Start
-            )
+            if(movingToNextStory.value) {
+                slideOutOfContainer(
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start
+                )
+            } else {
+                slideOutOfContainer(
+                    animationSpec = tween(slideDuration, easing = LinearEasing),
+                    towards = AnimatedContentTransitionScope.SlideDirection.End
+                )
+            }
         }) {
             Stories(numberOfPages = currentStory.value.images.size,
                 onEveryStoryChange = { position ->
@@ -76,12 +91,24 @@ fun StoriesView(userStories: List<UserStory>) {
                     Log.i("Action", "Completed")
                     val nextIndex = currentStoryIndex.value + 1
                     if (nextIndex < userStories.size) {
+                        movingToNextStory.value = true
                         currentStory.value = userStories[nextIndex]
                         currentStoryIndex.value = nextIndex
                         navController.navigate("story")
                     } else {
                         navController.navigate("storyList")
                     }
+                }, onPreviousUserStory = {
+                    Log.i("Action", "Previous")
+                    val previousIndex = currentStoryIndex.value - 1
+                    if (previousIndex >= 0) {
+                        movingToNextStory.value = false
+                        currentStory.value = userStories[previousIndex]
+                        currentStoryIndex.value = previousIndex
+                        navController.navigate("story")
+                    }
+                }, onClose = {
+                    navController.navigate("storyList")
                 }, content = storyContent
             )
         }

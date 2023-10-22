@@ -23,7 +23,9 @@ fun LinearIndicator(
     slideDurationInSeconds: Long,
     onPauseTimer: Boolean = false,
     hideIndicators: Boolean = false,
-    onAnimationEnd: () -> Unit
+    onAnimationEnd: () -> Unit,
+    currentStoryIndex: Int,
+    storyIndex: Int
 ) {
 
     val delayInMillis = rememberSaveable {
@@ -33,11 +35,21 @@ fun LinearIndicator(
     var progress by remember {
         mutableStateOf(0.00f)
     }
+    // if currentStoryIndex is not the StoryIndex then reset the progress
+    if (currentStoryIndex != storyIndex) {
+        progress = 0.00f
+    }
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
     )
+
+    val animatedProgressWithReset = if (progress == 0f) {
+        0f
+    } else {
+        animatedProgress
+    }
 
 
     if (startProgress) {
@@ -60,7 +72,7 @@ fun LinearIndicator(
             modifier = modifier
                 .padding(top = 12.dp, bottom = 12.dp)
                 .clip(RoundedCornerShape(12.dp)),
-            progress = animatedProgress,
+            progress = animatedProgressWithReset,
             color = indicatorProgressColor,
             trackColor = indicatorBackgroundColor
         )
