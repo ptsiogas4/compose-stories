@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Sample"
 include(":app")
-include(":lib")
+include(":stories")
