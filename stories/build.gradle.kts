@@ -66,4 +66,5 @@ dependencies {
     debugImplementation(libs.ui.test.manifest)
     implementation ("com.google.accompanist:accompanist-pager:0.17.0")
     implementation(libs.coil)
+    implementation(libs.navigation.compose)
 }
