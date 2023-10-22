@@ -70,6 +70,7 @@ fun StoriesView(userStories: List<UserStory>) {
         composable("storyList") {
             StoryView(stories = userStories, onClick = { story ->
                 currentStory.value = story
+                currentStoryIndex.value = userStories.indexOf(story)
                 navController.navigate("story")
             })
         }
