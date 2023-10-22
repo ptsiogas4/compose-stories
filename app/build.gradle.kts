@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.ptsiogas.composestories.sample"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.ptsiogas.composestories.sample"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
