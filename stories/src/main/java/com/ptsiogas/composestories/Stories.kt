@@ -1,8 +1,15 @@
 package com.ptsiogas.composestories
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -17,7 +24,9 @@ import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPagerApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalPagerApi::class, ExperimentalComposeUiApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun Stories(
     numberOfPages: Int,
@@ -33,6 +42,8 @@ fun Stories(
     hideIndicators: Boolean = false,
     onEveryStoryChange: ((Int) -> Unit)? = null,
     onComplete: () -> Unit,
+    onPreviousUserStory: () -> Unit,
+    onClose: () -> Unit,
     content: @Composable (Int) -> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = numberOfPages)
@@ -48,7 +59,72 @@ fun Stories(
             if (touchToPause)
                 pauseTimer = it
         }, content)
+    }
 
+    // Previous/Next buttons
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        // Previous button
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .background(Color.Transparent)
+                .combinedClickable(
+                    onClick = {
+                        if(pauseTimer) {
+                            pauseTimer = false
+                        } else {
+                            coroutineScope.launch {
+                                val newPage = pagerState.currentPage - 1
+                                if (pagerState.currentPage > 0) {
+                                    onEveryStoryChange?.invoke(newPage)
+                                    pagerState.animateScrollToPage(newPage)
+                                } else {
+                                    onPreviousUserStory()
+                                }
+                            }
+                        }
+                    },
+                    onLongClick = {
+                        // Long
+                        pauseTimer = !pauseTimer
+                    }
+                )
+        )
+        // Next button
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .background(Color.Transparent)
+                .combinedClickable(
+                    onClick = {
+                        if(pauseTimer) {
+                            pauseTimer = false
+                        } else {
+                            coroutineScope.launch {
+                                val newPage = pagerState.currentPage + 1
+                                if (pagerState.currentPage < numberOfPages - 1) {
+                                    onEveryStoryChange?.invoke(newPage)
+                                    pagerState.animateScrollToPage(newPage)
+                                } else {
+                                    onComplete()
+                                }
+                            }
+                        }
+                    },
+                    onLongClick = {
+                        // Long
+                        pauseTimer = !pauseTimer
+                    }
+                )
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
         //Indicator based on the number of items
         val modifier =
             if (hideIndicators) {
@@ -65,7 +141,6 @@ fun Stories(
                         )
                     )
             }
-
         Row(
             modifier = modifier,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -87,8 +162,19 @@ fun Stories(
                 onComplete = onComplete,
             )
         }
-    }
 
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth().offset(y = -24.dp)) {
+            IconButton(onClick = {
+                onClose()
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Color.White
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalPagerApi::class)
@@ -107,9 +193,7 @@ private fun RowScope.ListOfIndicators(
     onEveryStoryChange: ((Int) -> Unit)? = null,
     onComplete: () -> Unit,
 ) {
-    var currentPage by remember {
-        mutableStateOf(0)
-    }
+    val currentPage = pagerState.currentPage
 
     for (index in 0 until numberOfPages) {
         LinearIndicator(
@@ -119,22 +203,24 @@ private fun RowScope.ListOfIndicators(
             indicatorProgressColor,
             slideDurationInSeconds,
             pauseTimer,
-            hideIndicators
-        ) {
-            coroutineScope.launch {
+            hideIndicators,
+            currentStoryIndex = currentPage,
+            storyIndex = index,
+            onAnimationEnd = {
+                coroutineScope.launch {
+                    val newPage = pagerState.currentPage + 1
 
-                currentPage++
+                    if (newPage < numberOfPages) {
+                        onEveryStoryChange?.invoke(newPage)
+                        pagerState.animateScrollToPage(newPage)
+                    }
 
-                if (currentPage < numberOfPages) {
-                    onEveryStoryChange?.invoke(currentPage)
-                    pagerState.animateScrollToPage(currentPage)
-                }
-
-                if (currentPage == numberOfPages) {
-                    onComplete()
+                    if (newPage == numberOfPages) {
+                        onComplete()
+                    }
                 }
             }
-        }
+        )
 
         Spacer(modifier = Modifier.padding(spaceBetweenIndicator))
     }

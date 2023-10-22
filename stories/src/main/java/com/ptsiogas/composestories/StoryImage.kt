@@ -12,7 +12,9 @@ import com.google.accompanist.pager.HorizontalPager
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun StoryImage(pagerState: com.google.accompanist.pager.PagerState, onTap: (Boolean) -> Unit, content: @Composable (Int) -> Unit) {
-    HorizontalPager(state = pagerState, dragEnabled = false, modifier = Modifier.pointerInteropFilter {
+    HorizontalPager(state = pagerState, dragEnabled = false,
+        modifier = Modifier
+            .pointerInteropFilter {
         when(it.action) {
             MotionEvent.ACTION_DOWN -> {
                 onTap(true)
@@ -23,7 +25,8 @@ fun StoryImage(pagerState: com.google.accompanist.pager.PagerState, onTap: (Bool
             }
         }
         true
-    }) {
+    }
+    ) {
         content(it)
     }
 }
