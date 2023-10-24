@@ -1,18 +1,9 @@
 package com.ptsiogas.composestories
 
-import android.util.Log
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,77 +35,16 @@ fun StoriesView(userStories: List<UserStory>) {
         return
     }
     val navController = rememberNavController()
-    val currentStory = remember { mutableStateOf(userStories[0]) }
     val currentStoryIndex = remember { mutableStateOf(0) }
-    val movingToNextStory = remember { mutableStateOf(true) }
 
-    val storyContent: @Composable (Int) -> Unit = { index ->
-        AsyncImage(
-            model = currentStory.value.images[index],
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-    }
-    val slideDuration = 200
     NavHost(navController = navController, startDestination = "storyList") {
-        composable(route = "story", enterTransition = {
-            if(movingToNextStory.value) {
-                slideIntoContainer(
-                    animationSpec = tween(slideDuration, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            } else {
-                slideIntoContainer(
-                    animationSpec = tween(slideDuration, easing = LinearEasing),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            }
-        }, exitTransition = {
-            if(movingToNextStory.value) {
-                slideOutOfContainer(
-                    animationSpec = tween(slideDuration, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            } else {
-                slideOutOfContainer(
-                    animationSpec = tween(slideDuration, easing = LinearEasing),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            }
-        }) {
-            Stories(numberOfPages = currentStory.value.images.size,
-                onEveryStoryChange = { position ->
-                    Log.i("DATA", "Story Change $position")
-                },
-                onComplete = {
-                    Log.i("Action", "Completed")
-                    val nextIndex = currentStoryIndex.value + 1
-                    if (nextIndex < userStories.size) {
-                        movingToNextStory.value = true
-                        currentStory.value = userStories[nextIndex]
-                        currentStoryIndex.value = nextIndex
-                        navController.navigate("story")
-                    } else {
-                        navController.navigate("storyList")
-                    }
-                }, onPreviousUserStory = {
-                    Log.i("Action", "Previous")
-                    val previousIndex = currentStoryIndex.value - 1
-                    if (previousIndex >= 0) {
-                        movingToNextStory.value = false
-                        currentStory.value = userStories[previousIndex]
-                        currentStoryIndex.value = previousIndex
-                        navController.navigate("story")
-                    }
-                }, onClose = {
-                    navController.navigate("storyList")
-                }, content = storyContent
-            )
+        composable(route = "story") {
+            StoryScreen(userStories = userStories, selectedUserIndex = currentStoryIndex.value, onClose = {
+                navController.popBackStack()
+            })
         }
         composable("storyList") {
             StoryView(stories = userStories, onClick = { story ->
-                currentStory.value = story
                 currentStoryIndex.value = userStories.indexOf(story)
                 navController.navigate("story")
             })

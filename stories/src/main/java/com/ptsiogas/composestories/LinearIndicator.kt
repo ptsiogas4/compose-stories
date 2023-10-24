@@ -17,15 +17,16 @@ import kotlinx.coroutines.isActive
 @Composable
 fun LinearIndicator(
     modifier: Modifier,
+    isLastStory: Boolean = false,
     startProgress: Boolean = false,
     indicatorBackgroundColor: Color,
     indicatorProgressColor: Color,
     slideDurationInSeconds: Long,
     onPauseTimer: Boolean = false,
-    hideIndicators: Boolean = false,
     onAnimationEnd: () -> Unit,
     currentStoryIndex: Int,
-    storyIndex: Int
+    storyIndex: Int,
+    haveSeenStory: Boolean = false
 ) {
 
     val delayInMillis = rememberSaveable {
@@ -45,7 +46,9 @@ fun LinearIndicator(
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
     )
 
-    val animatedProgressWithReset = if (progress == 0f) {
+    val animatedProgressWithReset = if (haveSeenStory) {
+        1f
+    } else if (progress == 0f) {
         0f
     } else {
         animatedProgress
@@ -62,19 +65,20 @@ fun LinearIndicator(
             //When the timer is not paused and animation completes then move to next page.
             if (onPauseTimer.not()) {
                 delay(200)
+                if (isLastStory) {
+                    progress = 0.00f
+                }
                 onAnimationEnd()
             }
         }
     }
 
-    if (hideIndicators.not()) {
-        LinearProgressIndicator(
-            modifier = modifier
-                .padding(top = 12.dp, bottom = 12.dp)
-                .clip(RoundedCornerShape(12.dp)),
-            progress = animatedProgressWithReset,
-            color = indicatorProgressColor,
-            trackColor = indicatorBackgroundColor
-        )
-    }
+    LinearProgressIndicator(
+        modifier = modifier
+            .padding(top = 12.dp, bottom = 12.dp)
+            .clip(RoundedCornerShape(12.dp)),
+        progress = animatedProgressWithReset,
+        color = indicatorProgressColor,
+        trackColor = indicatorBackgroundColor
+    )
 }
