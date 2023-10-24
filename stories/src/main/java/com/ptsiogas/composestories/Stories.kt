@@ -1,19 +1,9 @@
 package com.ptsiogas.composestories
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.DraggableState
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,77 +11,21 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.lang.Math.abs
-
-@OptIn(ExperimentalPagerApi::class, ExperimentalMaterial3Api::class)
-@Composable
-fun StoryScreen(userStories: List<UserStory>, selectedUserIndex: Int, onClose: () -> Unit) {
-    val pagerState =
-        rememberPagerState(pageCount = userStories.size, initialPage = selectedUserIndex)
-
-    val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val coroutineScope = rememberCoroutineScope()
-
-    ModalBottomSheet(
-        modifier = Modifier,
-        onDismissRequest = {
-            onClose()
-        },
-        sheetState = modalBottomSheetState,
-        dragHandle = { },
-    ) {
-        HorizontalPager(
-            state = pagerState, dragEnabled = true,
-            modifier = Modifier
-        ) { pageIndex ->
-            Stories(
-                modalBottomSheetState = modalBottomSheetState,
-                isInSpotlight = pageIndex == pagerState.currentPage,
-                userStory = userStories.getOrNull(pageIndex) ?: UserStory("", "", ArrayList()),
-                numberOfPages = userStories.getOrNull(pageIndex)?.images?.size ?: 0,
-                onEveryStoryChange = { position ->
-                    Log.i("DATA", "Story Change $position")
-                },
-                onComplete = {
-                    Log.i("Action", "Completed")
-                    val nextIndex = pageIndex + 1
-                    if (nextIndex < userStories.size) {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(nextIndex)
-                        }
-                    } else {
-                        onClose()
-                    }
-                }, onPreviousUserStory = {
-
-                }, onClose = {
-                    onClose()
-                }
-            )
-        }
-    }
-}
 
 @OptIn(
     ExperimentalPagerApi::class, ExperimentalComposeUiApi::class,
@@ -186,9 +120,9 @@ fun Stories(
                 )
             )
         AnimatedVisibility(visible = (!pauseTimer)) {
-            Column {
+            Column(modifier = modifier) {
                 Row(
-                    modifier = modifier.statusBarsPadding(),
+                    modifier = Modifier.statusBarsPadding(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Spacer(modifier = Modifier.padding(spaceBetweenIndicator))

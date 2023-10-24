@@ -1,5 +1,6 @@
 package com.ptsiogas.composestories
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -11,10 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +32,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
 fun StoriesView(userStories: List<UserStory>) {
     if (userStories.isEmpty()) {
@@ -35,18 +45,60 @@ fun StoriesView(userStories: List<UserStory>) {
         return
     }
     val navController = rememberNavController()
-    val currentStoryIndex = remember { mutableStateOf(0) }
+
+    val pagerState = rememberPagerState(pageCount = userStories.size, initialPage = 0)
+    val modalBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
+    val showModal = remember { mutableStateOf(false) }
+
+    if (showModal.value) {
+        ModalBottomSheet(
+            modifier = Modifier,
+            onDismissRequest = {
+                showModal.value = false
+            },
+            sheetState = modalBottomSheetState,
+            dragHandle = { },
+        ) {
+            HorizontalPager(
+                state = pagerState, dragEnabled = true,
+                modifier = Modifier
+            ) { pageIndex ->
+                Stories(
+                    modalBottomSheetState = modalBottomSheetState,
+                    isInSpotlight = pageIndex == pagerState.currentPage,
+                    userStory = userStories.getOrNull(pageIndex) ?: UserStory("", "", ArrayList()),
+                    numberOfPages = userStories.getOrNull(pageIndex)?.images?.size ?: 0,
+                    onEveryStoryChange = { position ->
+                        Log.i("DATA", "Story Change $position")
+                    },
+                    onComplete = {
+                        Log.i("Action", "Completed")
+                        val nextIndex = pageIndex + 1
+                        if (nextIndex < userStories.size) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(nextIndex)
+                            }
+                        } else {
+                            showModal.value = false
+                        }
+                    }, onPreviousUserStory = {
+
+                    }, onClose = {
+                        showModal.value = false
+                    }
+                )
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = "storyList") {
-        composable(route = "story") {
-            StoryScreen(userStories = userStories, selectedUserIndex = currentStoryIndex.value, onClose = {
-                navController.popBackStack()
-            })
-        }
         composable("storyList") {
             StoryView(stories = userStories, onClick = { story ->
-                currentStoryIndex.value = userStories.indexOf(story)
-                navController.navigate("story")
+                showModal.value = true
+                coroutineScope.launch {
+                    pagerState.scrollToPage(userStories.indexOf(story))
+                }
             })
         }
     }
